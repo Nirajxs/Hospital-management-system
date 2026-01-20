@@ -1,2 +1,4 @@
+Django
 gunicorn
-django
+whitenoise
+django-widget-tweaks
