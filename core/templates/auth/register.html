@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<!-- Remove base container, keep navbar, hide footer -->
+<style>
+    main.py-4 {
+        padding: 0 !important;
+    }
+    main .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    footer {
+        display: none !important;
+    }
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+    }
+</style>
+
+<!-- PAGE UI STYLES -->
+<style>
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a23 0%, #1a0033 50%, #2d1b69 100%);
+    background-attachment: fixed;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+}
+
+/* Floating lights */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(120,119,198,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,119,198,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120,219,255,0.2) 0%, transparent 50%);
+    animation: floatBG 22s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes floatBG {
+    0%,100% { transform: scale(1); opacity: .7; }
+    50% { transform: scale(1.1); opacity: .5; }
+}
+
+.register-container {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    padding-top: 40px;
+}
+
+.register-card {
+    width: 100%;
+    max-width: 850px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 22px;
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 40px 45px;
+    box-shadow: 
+        0 25px 45px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    animation: cardFloat 6s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+h2 {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 600;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 25px;
+}
+
+/* FORM INPUTS */
+.form-label {
+    color: #fff;
+}
+
+.form-control, select {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 14px !important;
+    color: #fff !important;
+    padding: 14px !important;
+}
+
+/* SELECT DROPDOWN FIX */
+select option {
+    background-color: #1a0033 !important;
+    color: #ffffff !important;
+    padding: 10px !important;
+}
+
+.form-control::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+/* BUTTON */
+.btn-register {
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    border: none;
+    padding: 14px;
+    color: #fff;
+    font-weight: 600;
+    width: 100%;
+    border-radius: 14px;
+    transition: .3s;
+}
+
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+
+.login-link {
+    color: #9bbdff;
+    text-decoration: none;
+    transition: .3s;
+    font-weight: 500;
+}
+.login-link:hover {
+    color: #fff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.7);
+}
+</style>
+
+<!-- REGISTER FORM -->
+<div class="register-container">
+    <div class="register-card">
+
+        <h2>📝 Create Your Account</h2>
+
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+
+            <div class="col-md-6">
+                <label class="form-label">Username</label>
+                {{ form.username|add_class:"form-control" }}
+                {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                {{ form.email|add_class:"form-control" }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Role</label>
+                {{ form.role }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Password</label>
+                {{ form.password1|add_class:"form-control" }}
+                {% for e in form.password1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Confirm Password</label>
+                {{ form.password2|add_class:"form-control" }}
+                {% for e in form.password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12 mt-2">
+                <button class="btn-register">Create Account</button>
+            </div>
+
+            <div class="text-center mt-3">
+                <span class="text-light">Already have an account?</span>
+                <a href="{% url 'login' %}" class="login-link">Login</a>
+            </div>
+        </form>
+
+        <p class="text-light small mt-3">
+            * Patients get instant access. Doctors/Staff accounts need admin approval.
+        </p>
+    </div>
+</div>
+
+{% endblock %}

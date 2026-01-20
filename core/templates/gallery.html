@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- PAGE BACKGROUND (same theme everywhere) -->
+<style>
+body {
+    background: linear-gradient(135deg, #0a0a23, #1a0033, #2d1b69) !important;
+    font-family: "Segoe UI", sans-serif;
+    background-attachment: fixed;
+}
+
+/* Glow background */
+body::before {
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(circle at 20% 80%, rgba(120,119,198,0.25), transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,119,198,0.25), transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120,219,255,0.20), transparent 50%);
+    animation: bgFloat 18s ease-in-out infinite;
+    z-index:-1;
+}
+@keyframes bgFloat {
+    0%,100% {opacity: .8; transform:scale(1);}
+    50% {opacity:.6; transform:scale(1.05);}
+}
+
+/* Title Row */
+.gallery-header h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+}
+
+/* Upload Button */
+.btn-primary {
+    border-radius: 12px;
+    padding: 8px 18px;
+}
+
+/* Upload Box Glass Style */
+#uploadBox .card-body {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(18px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+}
+
+#uploadBox label {
+    color: #fff;
+    font-weight: 500;
+}
+
+#uploadBox input, #uploadBox textarea {
+    background: rgba(255,255,255,0.15) !important;
+    color: white !important;
+    border-radius: 12px !important;
+}
+
+/* Gallery Card */
+.gallery-card {
+    background: rgba(255,255,255,0.10);
+    border-radius: 18px;
+    overflow: hidden;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: 0.35s;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+}
+.gallery-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 25px 45px rgba(0,0,0,0.35);
+}
+
+/* Gallery Image */
+.gallery-image {
+    height: 250px;
+    object-fit: cover;
+    width: 100%;
+}
+
+/* Card text */
+.gallery-card .card-body {
+    color: white;
+}
+
+.text-muted {
+    color: #dcdcdc !important;
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 gallery-header">
+  <h2>📸 Gallery</h2>
+  {% if upload_form %}
+  <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#uploadBox">Upload Image</button>
+  {% endif %}
+</div>
+
+{% if upload_form %}
+<div class="collapse mb-3" id="uploadBox">
+  <div class="card card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">{{ upload_form.image.label_tag }} {{ upload_form.image }}</div>
+        <div class="col-md-6">{{ upload_form.caption.label_tag }} {{ upload_form.caption }}</div>
+      </div>
+      <button class="btn btn-success mt-3" type="submit">Upload</button>
+    </form>
+    <p class="text-muted small mt-2">* Only Doctors and Staff can upload images. Patients can view only.</p>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  {% for img in images %}
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="gallery-card h-100">
+        <img src="{{ img.image.url }}" class="gallery-image" alt="...">
+        <div class="card-body">
+          <p class="small mb-1">{{ img.caption|default:"—" }}</p>
+          <span class="text-muted small">by {{ img.uploader.username }}</span>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12"><div class="alert alert-info">No images yet.</div></div>
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<!-- Remove base container, keep navbar, hide footer -->
+<style>
+    main.py-4 {
+        padding: 0 !important;
+    }
+    main .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    footer {
+        display: none !important;
+    }
+
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+    }
+</style>
+
+<!-- LOGIN PAGE STYLES -->
+<style>
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a23 0%, #1a0033 50%, #2d1b69 100%);
+    background-attachment: fixed;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+}
+
+/* Floating background lights */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+    animation: bgFloat 20s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes bgFloat {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+}
+
+.login-container {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    padding-top: 40px;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 45px 40px;
+    width: 100%;
+    max-width: 430px;
+    box-shadow: 
+        0 25px 45px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    animation: floatCard 6s ease-in-out infinite;
+}
+
+@keyframes floatCard {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+h2 {
+    text-align: center;
+    font-size: 2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 30px;
+}
+
+.form-label {
+    color: #fff;
+}
+
+.form-control {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.form-control::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    font-weight: 600;
+    width: 100%;
+}
+
+/* Login links */
+.login-link {
+    color: #9bbdff;
+    font-weight: 500;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.login-link:hover {
+    color: #ffffff;
+    text-shadow: 0px 0px 8px rgba(255,255,255,0.7);
+}
+</style>
+
+<!-- LOGIN HTML -->
+<div class="login-container">
+    <div class="login-card">
+        <h2>🏥 Hospital Login</h2>
+
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="col-12">
+                <label class="form-label">👤 Username</label>
+                {{ form.username|add_class:"form-control" }}
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">🔒 Password</label>
+                {{ form.password|add_class:"form-control" }}
+            </div>
+
+            <div class="col-12">
+                <button class="btn" type="submit">🚀 Secure Login</button>
+            </div>
+
+            <!-- Added Links -->
+            <div class="text-center mt-3">
+                <a href="" class="login-link">Forgot Password?</a>
+            </div>
+
+            <div class="text-center mt-2">
+                <span class="text-light">Don’t have an account?</span>
+                <a href="{% url 'register' %}" class="login-link">Create Account</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- PARTICLES -->
+<script>
+function createParticle() {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.position = 'fixed';
+    p.style.background = 'rgba(255,255,255,0.15)';
+    p.style.borderRadius = '50%';
+    p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = '100%';
+    p.style.animation = `fall ${Math.random()*10+10}s linear`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 20000);
+}
+setInterval(createParticle, 400);
+</script>
+
+<style>
+@keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+}
+</style>
+
+{% endblock %}

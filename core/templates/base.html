@@ -1,0 +1,250 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HospitalMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'css/style.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+
+  <style>
+    /* Gradient Navbar */
+    .navbar {
+      background: linear-gradient(90deg, #223fbc77, #764ba2, #43e97b, #0a3622);
+      background-size: 300% 300%;
+      animation: gradientBG 10s ease infinite;
+      transition: all 0.3s ease;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Scroll shadow effect */
+    .navbar.scrolled {
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    }
+
+    /* Navbar links */
+    .navbar-nav .nav-link {
+      position: relative;
+      font-weight: 500;
+      color: #fff !important;
+      transition: all 0.3s ease;
+    }
+    .navbar-nav .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -3px;
+      width: 0%;
+      height: 3px;
+      background: #fff;
+      transition: width 0.4s ease;
+      border-radius: 2px;
+    }
+    .navbar-nav .nav-link:hover::after {
+      width: 100%;
+    }
+    .navbar-nav .nav-link:hover {
+      color: #ffe259 !important;
+      transform: translateY(-2px);
+    }
+
+    /* Buttons */
+    .navbar .btn {
+      transition: all 0.3s ease;
+      border-radius: 30px;
+      font-weight: 500;
+      padding: 6px 18px;
+    }
+    .navbar .btn-primary {
+      background: linear-gradient(135deg, #ff512f, #dd2476);
+      border: none;
+      color: #fff;
+    }
+    .navbar .btn-primary:hover {
+      background: linear-gradient(135deg, #43e97b, #38f9d7);
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    }
+    .navbar .btn-outline-danger {
+      border: 2px solid #fff;
+      color: #fff;
+    }
+    .navbar .btn-outline-danger:hover {
+      background: #ff4d4d;
+      border-color: #ff4d4d;
+      color: #fff;
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+  </style>
+</head> 
+<body>
+  
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold text-white" href="{% url 'home' %}">🏥Health Care Hospital & Medicine</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsExample">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarsExample">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'gallery' %}">Gallery</a></li>
+        {% if user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+          {% if user.role == 'PATIENT' %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'appointment_book' %}">Appointment</a></li>
+          {% endif %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
+          <!-- <li class="nav-item"><a class="btn btn-outline-danger ms-lg-2" href="{% url 'logout' %}">Logout</a></li> -->
+           <li class="nav-item">
+            <form method="post" action="{% url 'logout' %}">
+             {% csrf_token %}
+             <button type="submit" class="btn btn-outline-danger ms-lg-2">Logout</button>
+           </form>
+          </li>
+
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+          <li class="nav-item"><a class="btn btn-primary ms-lg-2" href="{% url 'register' %}">Register</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="py-4">
+  <div class="container">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<footer class="footer-modern text-light pt-5">
+  <div class="container">
+    <div class="row">
+
+      <!-- Logo & About -->
+      <div class="col-lg-4 col-md-6 mb-4">
+        <h3 class="fw-bold mb-3">
+          <i class="bi bi-hospital-fill text-danger"></i> HealthCare+
+        </h3>
+        <p class="small text-light">
+          Delivering <strong>world-class medical services</strong> with compassion, care and technology.  
+          Your health is our mission, 24/7.
+        </p>
+        <div class="mt-3">
+          <a href="#" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold shadow-sm">
+            <i class="bi bi-telephone-fill"></i> Emergency:- +91 9065227205
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="col-lg-2 col-md-6 mb-4">
+        <h5 class="fw-bold text-uppercase mb-3">Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="{% url 'home' %}" class="footer-link">Home</a></li>
+          <li><a href="{% url 'about' %}" class="footer-link">About</a></li>
+          <li><a href="{% url 'gallery' %}" class="footer-link">Gallery</a></li>
+          <li><a href="{% url 'appointment_book' %}" class="footer-link">Book Appointment</a></li>
+        </ul>
+      </div>
+
+      <!-- Services -->
+      <div class="col-lg-3 col-md-6 mb-4">
+        <h5 class="fw-bold text-uppercase mb-3">Our Services</h5>
+        <ul class="list-unstyled">
+          <li><i class="bi bi-capsule-pill text-danger"></i> Pharmacy</li>
+          <li><i class="bi bi-heart-pulse-fill text-danger"></i> Cardiology</li>
+          <li><i class="bi bi-people-fill text-danger"></i> OPD & IPD</li>
+          <li><i class="bi bi-ambulance text-danger"></i> 24/7 Emergency</li>
+        </ul>
+      </div>
+
+      <!-- Contact & Social -->
+      <div class="col-lg-3 col-md-6 mb-4">
+        <h5 class="fw-bold text-uppercase mb-3">Contact Us</h5>
+        <p class="small mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> Health Care & Medicine Hospital Road,Ranchi</p>
+        <p class="small mb-1"><i class="bi bi-envelope-fill text-danger"></i> support@healthcare.com</p>
+        <p class="small"><i class="bi bi-phone-fill text-danger"></i> +91 9065227205</p>
+
+        <div class="social-links mt-2">
+          <a href="https://www.facebook.com/share/1C2x4LiVBJ/" class="text-light me-3 fs-4"><i class="bi bi-facebook"></i></a>
+          <a href="#" class="text-light me-3 fs-4"><i class="bi bi-twitter"></i></a>
+          <a href="https://www.instagram.com/ms_niju_x?igsh=ODh0Y28xd2Zyb3Fo" class="text-light me-3 fs-4"><i class="bi bi-instagram"></i></a>
+          <a href="https://www.linkedin.com/in/niraj-kumar-37177530a?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app " class="text-light fs-4"><i class="bi bi-linkedin"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <hr class="border-secondary">
+
+    <!-- Bottom -->
+    <div class="text-center small text-primary pb-3">
+      © {{ now|default:2025 }} <strong>Health Care Hospital & Medicine</strong>. All Rights Reserved. <br>
+      Crafted with ❤️ by <span class="text-danger fw-bold"> Niraj Kumar </span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer-modern {
+    background: linear-gradient(135deg, #0d1117, #1a1f29);
+    border-top: 5px solid #dc3545;
+  }
+  .footer-modern h5 {
+    color: #f8f9fa;
+    border-left: 4px solid #dc3545;
+    padding-left: 8px;
+  }
+  .footer-link {
+    color: #aaa;
+    text-decoration: none;
+    transition: 0.3s;
+  }
+  .footer-link:hover {
+    color: #fff;
+    padding-left: 5px;
+  }
+  .social-links a {
+    transition: 0.3s;
+  }
+  .social-links a:hover {
+    color: #dc3545;
+    transform: scale(1.2);
+  }
+</style>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Add shadow on scroll
+  window.addEventListener("scroll", function() {
+    const nav = document.querySelector(".navbar");
+    if (window.scrollY > 50) {
+      nav.classList.add("scrolled");
+    } else {
+      nav.classList.remove("scrolled");
+    }
+  });
+</script>
+
+
+
+
+</body>
+</html>

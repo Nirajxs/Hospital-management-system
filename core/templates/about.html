@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  .hero-section {
+    background: linear-gradient(rgba(0, 123, 255, 0.6), rgba(0, 123, 255, 0.6)), url('https://images.pexels.com/photos/33637448/pexels-photo-33637448.jpeg') center/cover no-repeat;
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .icon-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #0d6efd;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 15px;
+  }
+</style>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="container">
+    <h1 class="display-4 fw-bold">About Our Hospital</h1>
+    <p class="lead">Compassionate Care, Advanced Technology & Trusted Doctors</p>
+  </div>
+</section>
+
+<!-- Introduction -->
+<section class="py-5">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-md-6">
+        <img src="https://images.pexels.com/photos/13697924/pexels-photo-13697924.jpeg" class="img-fluid rounded shadow" alt="Hospital Image">
+      </div>
+      <div class="col-md-6">
+        <h2 class="fw-bold">Who We Are</h2>
+        <p class="text-muted">
+          Our hospital is dedicated to providing world-class healthcare services with compassion and professionalism. 
+          From emergency care to specialized treatments, we focus on improving lives with a patient-first approach.  
+        </p>
+        <p class="text-muted">
+          With a legacy of trust and excellence, our hospital is equipped with advanced technology, experienced doctors, 
+          and modern facilities to ensure holistic care for every patient.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Mission & Vision -->
+<section class="py-5 bg-light">
+  <div class="container text-center">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="p-4 shadow rounded bg-white h-100">
+          <h3 class="fw-bold">Our Mission</h3>
+          <p class="text-muted">
+            To deliver affordable and high-quality healthcare services that improve the health and well-being of our community.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="p-4 shadow rounded bg-white h-100">
+          <h3 class="fw-bold">Our Vision</h3>
+          <p class="text-muted">
+            To be recognized as a leader in medical innovation, compassionate care, and patient satisfaction globally.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Why Choose Us -->
+<section class="py-5">
+  <div class="container text-center">
+    <h2 class="fw-bold mb-4">Why Choose Us</h2>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="icon-circle"><i class="bi bi-heart-pulse"></i></div>
+        <h5 class="fw-bold">24/7 Emergency</h5>
+        <p class="text-muted">Round-the-clock emergency care with quick response and expert doctors.</p>
+      </div>
+      <div class="col-md-4">
+        <div class="icon-circle"><i class="bi bi-people"></i></div>
+        <h5 class="fw-bold">Expert Team</h5>
+        <p class="text-muted">Highly skilled doctors, nurses, and staff providing personalized care.</p>
+      </div>
+      <div class="col-md-4">
+        <div class="icon-circle"><i class="bi bi-hospital"></i></div>
+        <h5 class="fw-bold">Modern Facilities</h5>
+        <p class="text-muted">Advanced technology and world-class infrastructure for better treatment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Our Departments -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <h2 class="fw-bold text-center mb-5">Our Departments</h2>
+    <div class="row g-4">
+      <div class="col-md-3 col-6">
+        <div class="card shadow h-100 text-center p-3">
+          <i class="bi bi-heart fs-1 text-danger"></i>
+          <h6 class="mt-2">Cardiology</h6>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="card shadow h-100 text-center p-3">
+          <i class="bi bi-brain fs-1 text-primary"></i>
+          <h6 class="mt-2">Neurology</h6>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="card shadow h-100 text-center p-3">
+          <i class="bi bi-bandaid fs-1 text-success"></i>
+          <h6 class="mt-2">Orthopedics</h6>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="card shadow h-100 text-center p-3">
+          <i class="bi bi-eye fs-1 text-warning"></i>
+          <h6 class="mt-2">Ophthalmology</h6>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Info -->
+<section class="py-5">
+  <div class="container text-center">
+    <h2 class="fw-bold mb-3">Get in Touch</h2>
+    <p class="text-muted">We’re here to help you with any questions or emergencies. Reach out anytime.</p>
+    <div class="row g-4 mt-4">
+      <div class="col-md-4">
+        <div class="shadow p-4 rounded h-100">
+          <i class="bi bi-telephone fs-3 text-primary"></i>
+          <h6 class="mt-2">+91 9065227205</h6>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="shadow p-4 rounded h-100">
+          <i class="bi bi-envelope fs-3 text-danger"></i>
+          <h6 class="mt-2">support@healthcare.com</h6>
+        </div>
+      </div> 
+      <div class="col-md-4">
+        <div class="shadow p-4 rounded h-100">
+          <i class="bi bi-geo-alt fs-3 text-success"></i>
+          <h6 class="mt-2">Health Care & Medicine Hospital Road,Ranchi</h6>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

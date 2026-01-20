@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Background Theme (same as login/register/profile) -->
+<style>
+body {
+    background: linear-gradient(135deg, #0a0a23 0%, #1a0033 50%, #2d1b69 100%) !important;
+    background-attachment: fixed;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* Soft floating glow (NO SHAKE) */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(circle at 20% 80%, rgba(120,119,198,.25), transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,119,198,.25), transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120,219,255,.2), transparent 50%);
+    animation: bgGlow 18s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes bgGlow {
+    0%,100% { opacity: .75; transform: scale(1); }
+    50% { opacity: .6; transform: scale(1.05); }
+}
+
+/* Dashboard Card (NO SHAKE, NO FLOAT) */
+.dashboard-card {
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(18px);
+    border-radius: 1rem;
+    padding: 2rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    transition: 0.3s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+}
+
+/* Table */
+.table {
+    border-radius: 1rem;
+    overflow: hidden;
+    color: white;
+}
+
+.table thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255,255,255,0.08);
+}
+
+/* BADGES */
+.badge {
+    padding: .55em .9em;
+    border-radius: .65rem;
+    font-size: .85rem;
+}
+.status-pending { background: #ffc107; color: black; }
+.status-approved { background: #28a745; }
+.status-cancelled { background: #dc3545; }
+.status-default { background: #6c757d; }
+
+/* BUTTON */
+.btn-animate {
+    transition: 0.3s;
+    border-radius: .5rem;
+}
+
+.btn-animate:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* Table text white */
+table td, table th {
+    color: rgb(20, 4, 113) !important;
+}
+
+/* Form Select inside doctor actions */
+.form-select {
+    border-radius: .6rem !important;
+}
+</style>
+
+<h2 class="mb-4 fw-bold text-light">📊 Dashboard</h2>
+
+{% if user.role == 'PATIENT' %}
+  <div class="dashboard-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold text-info">🩺 My Appointments</h5>
+      <a href="{% url 'appointment_book' %}" class="btn btn-sm btn-primary btn-animate">+ Book</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead><tr><th>ID</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for a in my_appointments %}
+            <tr>
+              <td>#{{ a.id }}</td>
+              <td>{{ a.doctor.get_full_name|default:a.doctor.username }}</td>
+              <td>{{ a.date }}</td>
+              <td>{{ a.time }}</td>
+              <td>
+                <span class="badge 
+                  {% if a.status == 'PENDING' %}status-pending
+                  {% elif a.status == 'APPROVED' %}status-approved
+                  {% elif a.status == 'CANCELLED' %}status-cancelled
+                  {% else %}status-default{% endif %}">
+                  {{ a.get_status_display }}
+                </span>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted">No appointments yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+{% elif user.role == 'DOCTOR' %}
+
+
+{% if new_count and new_count > 0 %}
+  <div class="alert alert-info shadow-sm mb-3">
+    🔔 You have <strong>{{ new_count }}</strong> new appointment{{ new_count|pluralize }}.
+  </div>
+{% endif %}
+
+  <div class="dashboard-card mb-4">
+    <h5 class="fw-bold text-primary">👨‍⚕️ Assigned Appointments</h5>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead><tr><th>ID</th><th>Patient</th><th>Date</th><th>Time</th><th>Symptoms</th><th>Image</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for a in assigned %}
+            <tr>
+              <td>#{{ a.id }}</td>
+              <td>{{ a.patient.username }}</td>
+              <td>{{ a.date }}</td>
+              <td>{{ a.time }}</td>
+              <td class="small">{{ a.symptoms|default:'—' }}</td>
+              <td>{% if a.image %}<a href="{{ a.image.url }}" target="_blank" class="btn btn-sm btn-outline-info">View</a>{% else %}—{% endif %}</td>
+              <td>
+                <span class="badge 
+                  {% if a.status == 'PENDING' %}status-pending
+                  {% elif a.status == 'APPROVED' %}status-approved
+                  {% elif a.status == 'CANCELLED' %}status-cancelled
+                  {% else %}status-default{% endif %}">
+                  {{ a.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <form method="post" action="{% url 'update_appointment_status' a.id %}">
+                  {% csrf_token %}
+                  <select class="form-select form-select-sm mb-2" name="status">
+                    {% for key,label in a.STATUS_CHOICES %}
+                      <option value="{{ key }}" {% if a.status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-sm btn-success btn-animate">Update</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="text-center text-muted">No appointments assigned.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+{% elif user.role == 'STAFF' %}
+  <div class="dashboard-card mb-4">
+    <h5 class="fw-bold text-danger">📋 All Doctors' Appointments</h5>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead><tr><th>ID</th><th>Doctor</th><th>Patient</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for a in all_appointments %}
+            <tr>
+              <td>#{{ a.id }}</td>
+              <td>{{ a.doctor.get_full_name|default:a.doctor.username }}</td>
+              <td>{{ a.patient.username }}</td>
+              <td>{{ a.date }}</td>
+              <td>{{ a.time }}</td>
+              <td>
+                <span class="badge 
+                  {% if a.status == 'PENDING' %}status-pending
+                  {% elif a.status == 'APPROVED' %}status-approved
+                  {% elif a.status == 'CANCELLED' %}status-cancelled
+                  {% else %}status-default{% endif %}">
+                  {{ a.get_status_display }}
+                </span>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">No appointments yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+{% else %}
+  <p class="alert alert-info shadow-sm">Welcome to the Hospital Management Dashboard 🎉</p>
+{% endif %}
+
+{% endblock %}

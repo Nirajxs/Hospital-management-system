@@ -1,0 +1,4 @@
+.hero { background: linear-gradient(120deg, #e8f5ff, #ffffff); }
+.hover-card { transition: transform .2s ease, box-shadow .2s ease; }
+.hover-card:hover { transform: translateY(-4px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15); }
+img { object-fit: cover; }

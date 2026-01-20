@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- PAGE BACKGROUND -->
+<style>
+body {
+    background: linear-gradient(135deg,#0a0a23,#1a0033,#2d1b69) !important;
+    background-attachment: fixed;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* Glowing Background */
+body::before {
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(circle at 20% 80%, rgba(120,119,198,.25), transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,119,198,.25), transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120,219,255,.20), transparent 50%);
+    animation: bgFloat 18s ease-in-out infinite;
+    z-index:-1;
+}
+@keyframes bgFloat {
+    0%,100% {opacity:.8; transform:scale(1);}
+    50% {opacity:.6; transform:scale(1.05);}
+}
+
+/* Payment Card Glass */
+.payment-card {
+  background: rgba(255,255,255,0.12);
+  border-radius: 22px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.15);
+  max-width: 650px;
+  margin: auto;
+}
+
+/* Title */
+.payment-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1.5rem;
+}
+
+/* Payment Method Box (Glass) */
+.payment-method {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: 0.3s;
+  cursor: pointer;
+  color: white;
+}
+.payment-method:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.payment-method input {
+  margin-right: 12px;
+}
+
+/* Hidden form sections */
+.hidden { display: none; }
+
+/* Inner forms (Glass) */
+.payment-form {
+  margin-top: 1rem;
+  background: rgba(255,255,255,0.10);
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.payment-form label {
+    color: #fff;
+    font-weight: 500;
+}
+
+.payment-form input, 
+.payment-form select {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.20) !important;
+  color: white !important;
+}
+
+/* Pay Button */
+.btn-pay {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg,#43e97b,#38f9d7);
+  border: none;
+  color: #000;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 14px;
+  transition: 0.3s;
+  margin-top: 1rem;
+}
+.btn-pay:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+}
+
+/* Make labels white */
+.payment-method, .payment-card label {
+  color: #ffffff !important;
+}
+</style>
+
+<!-- PAYMENT CARD -->
+<div class="container my-5">
+  <div class="payment-card">
+    <h2 class="payment-title">💳 Select Payment Method</h2>
+    
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- UPI -->
+      <label class="payment-method">
+        <input type="radio" name="payment_method" value="upi" onclick="showForm('upi-form')" required>
+        📱 UPI (Google Pay, PhonePe, Paytm)
+      </label>
+      <div id="upi-form" class="payment-form hidden">
+        <label>Enter UPI ID:</label>
+        <input type="text" name="upi_id" placeholder="example@upi">
+      </div>
+
+      <!-- Card -->
+      <label class="payment-method">
+        <input type="radio" name="payment_method" value="card" onclick="showForm('card-form')">
+        💳 Debit / Credit Card
+      </label>
+      <div id="card-form" class="payment-form hidden">
+        <label>Card Number:</label>
+        <input type="text" name="card_number" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="16">
+
+        <label>Expiry Date:</label>
+        <input type="month" name="expiry_date">
+
+        <label>CVV:</label>
+        <input type="password" name="cvv" maxlength="3" placeholder="XXX">
+      </div>
+
+      <!-- Net Banking -->
+      <label class="payment-method">
+        <input type="radio" name="payment_method" value="netbanking" onclick="showForm('netbanking-form')">
+        🏦 Net Banking
+      </label>
+      <div id="netbanking-form" class="payment-form hidden">
+        <label>Select Bank:</label>
+        <select name="bank">
+          <option value="">-- Choose Bank --</option>
+          <option>State Bank of India</option>
+          <option>HDFC Bank</option>
+          <option>ICICI Bank</option>
+          <option>Axis Bank</option>
+          <option>Kotak Bank</option>
+        </select>
+      </div>
+
+      <!-- Wallet -->
+      <label class="payment-method">
+        <input type="radio" name="payment_method" value="wallet" onclick="showForm('wallet-form')">
+        💼 Wallet
+      </label>
+      <div id="wallet-form" class="payment-form hidden">
+        <label>Select Wallet:</label>
+        <select name="wallet">
+          <option value="">-- Choose Wallet --</option>
+          <option>Paytm Wallet</option>
+          <option>Amazon Pay</option>
+          <option>PhonePe Wallet</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-pay">Pay Now</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function showForm(formId) {
+  document.querySelectorAll('.payment-form').forEach(div => {
+    div.classList.add('hidden');
+  });
+  document.getElementById(formId).classList.remove('hidden');
+}
+</script>
+
+{% endblock %}

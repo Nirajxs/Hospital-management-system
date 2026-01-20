@@ -1,0 +1,633 @@
+Django>=5.0,<6.0
+Pillow>=10.0.0
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login as auth_login
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .forms import UserRegistrationForm, AppointmentForm, GalleryImageForm
+from .models import User, Appointment, GalleryImage
+from .decorators import role_required
+
+from django.db.models import Avg, Count
+
+
+def home(request):
+    doctors = User.objects.filter(role='DOCTOR').annotate(
+        avg_rating=Avg('doctor_ratings__stars'),
+        total_reviews=Count('doctor_ratings')
+    )
+    return render(request, "home.html", {"doctors": doctors})
+
+
+def about(request):
+    return render(request, 'about.html')
+
+
+def register(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            if user.role == User.PATIENT:
+                messages.success(request, 'Registration successful. You are logged in as patient.')
+                auth_login(request, user)
+                return redirect('dashboard')
+            else:
+                messages.info(request, 'Registration received. Admin approval required before you can login.')
+                return redirect('login')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'auth/register.html', {'form': form})
+
+
+@login_required
+def profile(request):
+    return render(request, 'profile.html')
+
+
+@login_required
+def dashboard(request):
+    user = request.user
+    context = {}
+    if user.role == User.PATIENT:
+        context['my_appointments'] = Appointment.objects.filter(patient=user)
+    elif user.role == User.DOCTOR:
+        context['assigned'] = Appointment.objects.filter(doctor=user)
+    elif user.role == User.STAFF:
+        context['all_appointments'] = Appointment.objects.select_related('patient', 'doctor').all()
+    return render(request, 'dashboard.html', context)
+
+
+@login_required
+@role_required(User.PATIENT)
+def book_appointment(request):  # MAIN FUNCTION (UPDATED)
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST, request.FILES)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+
+            appointment.patient = request.user
+            appointment.status = 'Pending Payment'
+
+            # ⭐ NEW FIELDS ADDED HERE
+            appointment.patient_name = request.POST.get("patient_name")
+            appointment.contact_number = request.POST.get("contact_number")
+
+            appointment.save()
+
+            return redirect('appointment_payment', pk=appointment.pk)
+    else:
+        form = AppointmentForm()
+
+    return render(request, 'appointment_book.html', {'form': form})
+
+
+@login_required
+def gallery(request):
+    images = GalleryImage.objects.all()
+    upload_form = None
+    if request.user.role in (User.DOCTOR, User.STAFF):
+        if request.method == 'POST':
+            upload_form = GalleryImageForm(request.POST, request.FILES)
+            if upload_form.is_valid():
+                g = upload_form.save(commit=False)
+                g.uploader = request.user
+                g.save()
+                messages.success(request, 'Image uploaded to gallery.')
+                return redirect('gallery')
+        else:
+            upload_form = GalleryImageForm()
+    return render(request, 'gallery.html', {'images': images, 'upload_form': upload_form})
+
+
+@login_required
+@role_required(User.DOCTOR)
+def update_appointment_status(request, pk):
+    appt = get_object_or_404(Appointment, pk=pk, doctor=request.user)
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in dict(Appointment.STATUS_CHOICES):
+            appt.status = new_status
+            appt.save()
+            messages.success(request, 'Status updated.')
+        else:
+            messages.error(request, 'Invalid status.')
+    return redirect('dashboard')
+
+
+@login_required
+@role_required(User.PATIENT)
+def appointment_payment(request, pk):
+    appt = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+    if request.method == "POST":
+        payment_method = request.POST.get("payment_method", "UPI")
+
+        appt.status = "PENDING"
+        appt.payment_status = "SUCCESS"
+        appt.payment_method = payment_method
+        appt.save()
+
+        messages.success(request, "💳 Payment successful! Appointment confirmed.")
+        return redirect("dashboard")
+
+    return render(request, "payment.html", {"appointment": appt})
+
+
+@login_required
+@role_required(User.PATIENT)
+def confirm_payment(request, pk):
+    appt = get_object_or_404(Appointment, pk=pk, patient=request.user)
+    appt.status = 'CONFIRMED'
+    appt.save()
+    messages.success(request, "Payment successful! Appointment confirmed.")
+    return redirect('dashboard')
+
+
+from .models import Rating, User
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def rate_doctor(request, doctor_id):
+    doctor = User.objects.get(id=doctor_id, role='DOCTOR')
+
+    if request.user.role != "PATIENT":
+        messages.error(request, "Only Patients can submit ratings.")
+        return redirect("home")
+
+    existing = Rating.objects.filter(doctor=doctor, patient=request.user).first()
+
+    if request.method == "POST":
+        stars = int(request.POST.get("stars", 5))
+        review = request.POST.get("review", "")
+
+        if existing:
+            existing.stars = stars
+            existing.review = review
+            existing.save()
+            messages.success(request, "Your rating has been updated.")
+        else:
+            Rating.objects.create(
+                doctor=doctor,
+                patient=request.user,
+                stars=stars,
+                review=review
+            )
+            messages.success(request, "Thank you! Your rating has been submitted.")
+
+        return redirect("home")
+
+    return render(request, "rate_doctor.html", {
+        "doctor": doctor,
+        "existing": existing
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  /* Hero section animation */
+  .hero {
+    background: linear-gradient(135deg, #05214d 0%, #14bbc7 100%);
+    color: white;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    transition: all 0.3s ease-in-out;
+  }
+  .hero:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+  }
+
+  /* Card hover animation */
+  .hover-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  .hover-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .btn-animate {
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  .btn-animate:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  #practice{
+  text-align: left;
+  }
+
+.info-section {
+    display: flex;
+    justify-content: space-around;
+    margin: 60px 20px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.info-card {
+    background: #2cd5d263;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    padding: 25px;
+    width: 250px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+.info-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 20px #10df1ef0;
+}
+.info-card i {
+    font-size: 3rem;
+    color: #42a5f5;
+    margin-bottom: 15px;
+}
+
+.services {
+    padding: 60px 20px;
+    text-align: center;
+}
+.services h2 {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+}
+.service-box {
+    display: inline-block;
+    background: white;
+    padding: 25px;
+    margin: 15px;
+    border-radius: 20px;
+    width: 250px;
+    box-shadow: 0 4px 10px rgba(218, 24, 98, 0.851);
+    transition: all 0.3s;
+}
+.service-box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+.service-box i {
+    font-size: 2.5rem;
+    color: #34d399;
+    margin-bottom: 10px;
+}
+</style>
+
+<!-- Hero Section -->
+<div class="p-5 mb-4 rounded-3 hero">
+  <div class="container-fluid py-5 text-center">
+    <h1 class="display-4 fw-bold mb-3">🏥Health Care Hospital & Medicine</h1>
+    <p class="col-md-10 mx-auto fs-5 mb-4">
+      Book appointments, manage records, and connect with expert doctors—all in one place.
+    </p>
+    <a class="btn btn-light btn-lg px-4 btn-animate" 
+       href="{% url 'appointment_book' %}"
+       {% if not user.is_authenticated or user.role != 'PATIENT' %}
+         onclick="alert('Patients only. Please login/register as Patient.'); return false;"
+       {% endif %}>
+       Book Appointment
+    </a>
+  </div>
+</div>
+
+<!-- Carousel -->
+<div id="hospitalCarousel" class="carousel slide mt-5" data-bs-ride="carousel">
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <img src="https://images.pexels.com/photos/668300/pexels-photo-668300.jpeg"  class="d-block w-100" height="450" alt="Hospital">
+    </div>
+    <div class="carousel-item">
+      <img src="https://images.pexels.com/photos/1770818/pexels-photo-1770818.jpeg" class="d-block w-100" height="450" alt="Doctors">
+    </div>
+    <div class="carousel-item">
+      <img src="https://images.pexels.com/photos/5452223/pexels-photo-5452223.jpeg" class="d-block w-100" height="450" alt="Patient Care">
+    </div>
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#hospitalCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#hospitalCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+  </button>
+</div>
+
+<!-- Info Cards -->
+<div class="info-section">
+    <div class="info-card">
+        <i class="fas fa-user-md"></i>
+         <h3>Expert Doctors</h3>
+        <p>Our team of specialists provide world-class healthcare.</p>
+    </div>
+    <div class="info-card">
+        <i class="fas fa-procedures"></i>
+        <h3>24/7 Emergency</h3>
+        <p>Round-the-clock emergency services with rapid response.</p>
+    </div>
+    <div class="info-card">
+        <i class="fas fa-stethoscope"></i>
+        <h3>Modern Facilities</h3>
+        <p>Equipped with the latest medical technology.</p>
+    </div>
+    <div class="info-card">
+        <i class="fas fa-heartbeat"></i>
+        <h3>Patient Care</h3>
+        <p>We ensure compassionate and personalized treatment.</p>
+    </div>
+</div>
+
+<!-- Doctors Section -->
+<h3 class="mt-5 mb-4 text-center fw-bold">👨‍⚕️ Meet Our Expert Doctors</h3>
+<div class="row g-4">
+  {% if doctors %}
+    {% for d in doctors %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 text-center shadow hover-card p-4">
+        <div class="card-body">
+
+          <!-- Doctor Icon -->
+          <div class="mb-3">
+            <div style="width:80px; height:80px; margin:auto; 
+                        border-radius:50%; background:#006eff; 
+                        display:flex; align-items:center; 
+                        justify-content:center; font-size:40px; color:white;">
+              🧑‍⚕️
+            </div>
+          </div>
+
+          <!-- Name -->
+          <h5 class="card-title fw-bold">
+            Dr. {{ d.get_full_name|default:d.username }}
+          </h5>
+
+          <!-- Speciality -->
+          <p class="text-muted small">
+            {{ d.speciality|default:"General Physician" }}
+          </p>
+
+       
+         
+
+          <!-- Rating  -->
+
+   
+
+
+
+          <!-- Rating in Modal -->
+{% if d.avg_rating %}
+    <p class="mb-2 text-center">
+        <span style="color: #f4b400; font-size:19px;">
+            {% for i in "12345" %}
+                {% if i|add:'0' <= d.avg_rating %}
+                    ★
+                {% else %}
+                    ☆
+                {% endif %}
+            {% endfor %}
+        </span>
+        <br>
+        <span class="text-muted small">
+            ({{ d.avg_rating|floatformat:1 }} / 5 — {{ d.total_reviews }} reviews)
+        </span>
+    </p>
+{% else %}
+    <p class="text-muted small text-center mb-2">⭐ No ratings yet</p>
+{% endif %}
+
+
+
+
+<style>
+  
+.doctor-btn {
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    padding: 10px 0;
+    border-radius: 12px !important;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.25s ease;
+   
+    
+}
+
+.doctor-btn:hover {
+    background: #0d6efd;
+    color: white !important;
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(20, 220, 163, 0.483);
+}
+
+/* spacing for card center */
+.card .d-grid.gap-2 {
+    margin-top: 15px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    }
+
+
+
+</style>
+
+
+
+<div class="d-grid gap-2 mt-3">
+
+       <a href="{% url 'appointment_book' %}" 
+       class="btn doctor-btn shadow-sm">
+        Book with this expert
+    </a>
+
+    <button class="btn doctor-btn shadow-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#doctorModal{{ d.id }}">
+        View Details
+    </button>
+    
+
+        <a href="{% url 'rate_doctor' d.id %}" 
+       class="btn doctor-btn shadow-sm">
+        ⭐ Rate This Doctor
+    </a>
+
+</div>
+
+
+
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL FIXED -->
+<div class="modal fade" id="doctorModal{{ d.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Dr. {{ d.get_full_name|default:d.username }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row">
+
+          <!-- Image -->
+          <div class="col-md-4 text-center">
+            {% if d.image %}
+              <img src="{{ d.image.url }}" class="img-fluid rounded-circle mb-3" 
+                   style="width:130px; height:130px; object-fit:cover;">
+            {% else %}
+              <img src="/static/default.png" class="img-fluid rounded-circle mb-3" 
+                   style="width:130px;">
+            {% endif %}
+          </div>
+
+          <!-- Details -->
+          <div class="col-md-8">
+            <p><strong>Speciality:</strong> {{ d.speciality|default:"Not provided" }}</p>
+            <p><strong>Work From:</strong> {{ d.work_from|default:"Not provided" }}</p>
+            <p><strong>Experience:</strong> {% if d.experience %} {{ d.experience }} years {% else %} Not provided {% endif %}</p>
+            <p><strong>Qualification:</strong> {{ d.qualification|default:"Not provided" }}</p>
+            <p><strong>About:</strong> {{ d.about|default:"No bio available" }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <a href="{% url 'appointment_book' %}" class="btn btn-primary">Book Appointment</a>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+    {% endfor %}
+  {% else %}
+    <div class="col-12">
+      <div class="alert alert-info shadow-sm text-center">
+        No approved doctors yet. Please check back later.
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Services Section -->
+<div class="services">
+    <h2>🌟 Our Services</h2>
+    <div class="service-box">
+        <i class="fas fa-x-ray"></i>
+        <h4>Diagnostics</h4>
+        <p>Advanced imaging & lab services for accurate results.</p>
+    </div>
+    <div class="service-box">
+        <i class="fas fa-syringe"></i>
+        <h4>Vaccinations</h4>
+        <p>Comprehensive immunization programs for all ages.</p>
+    </div>
+    <div class="service-box">
+        <i class="fas fa-ambulance"></i>
+        <h4>Ambulance</h4>
+        <p>Quick and reliable emergency ambulance support.</p>
+    </div>
+    <div class="service-box">
+        <i class="fas fa-clinic-medical"></i>
+        <h4>Outpatient</h4>
+        <p>Specialized OPD services for your convenience.</p>
+    </div>
+</div>
+
+<!-- Doctors Scroll -->
+<h1 align="center">Expert Doctors</h1>
+<marquee behavior="alternate" scrollamount="12">
+  <div class="row mt-5 g-5">
+    <div class="col-md-20">
+      <div class="h-200">
+        <div class="card-body">
+          <img src="https://plus.unsplash.com/premium_photo-1702598525684-fe2f8b75eb62?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE4Nnx8fGVufDB8fHx8fA%3D%3D" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://images.unsplash.com/photo-1612531386530-97286d97c2d2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGluZGlhbiUyMGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://media.istockphoto.com/id/1394769128/photo/nurse-with-medical-file-at-hospital.webp?a=1&b=1&s=612x612&w=0&k=20&c=_WDw4-j4RF0rEDyinLaFz9nlxu43C6vB1m3ThPfBPYE=" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://plus.unsplash.com/premium_photo-1661699733041-a4e02693adf5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjl8fGluZGlhbiUyMGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://plus.unsplash.com/premium_photo-1661764878654-3d0fc2eefcca?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzd8fGluZGlhbiUyMGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://plus.unsplash.com/premium_photo-1702598773834-be6d566bb57f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjF8fGluZGlhbiUyMGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://plus.unsplash.com/premium_photo-1661778976948-0cbf766dc0e8?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDIxNXx8fGVufDB8fHx8fA%3D%3D" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+          <img src="https://images.unsplash.com/photo-1659353887238-d6c8506a1b5b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW5kaWFuJTIwZmVtYWxlJTIwZG9jdG9yfGVufDB8fDB8fHww" style="border: 2px solid black;" alt="Doctor" width="250" height="300">
+        </div>
+      </div>
+    </div>
+  </div>
+</marquee>
+
+<h3 class="mb-3 text-primary fw-bold">💡</h3>
+<div class="row g-4">
+  <div class="col-6 col-md-4">
+    <a href="{% url 'about' %}" class="text-decoration-none">
+      <div class="card h-100 hover-card text-center p-3">
+        <div class="card-body">
+          <h5 class="card-title text-primary fw-bold">About Us</h5>
+          <p class="card-text small text-muted">Learn more about our hospital and services.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-4">
+    <a href="{% url 'gallery' %}" class="text-decoration-none">
+      <div class="card h-100 hover-card text-center p-3">
+        <div class="card-body">
+          <h5 class="card-title text-success fw-bold">Gallery</h5>
+          <p class="card-text small text-muted">Explore our modern facilities & events.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-4">
+    <a href="{% url 'appointment_book' %}" class="text-decoration-none">
+      <div class="card h-100 hover-card text-center p-3">
+        <div class="card-body">
+          <h5 class="card-title text-danger fw-bold">Book Appointment</h5>
+          <p class="card-text small text-muted">Easy online booking for patients.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+{% endblock %}
+
